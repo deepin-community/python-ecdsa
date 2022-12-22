@@ -1,0 +1,35 @@
+Source: python-ecdsa
+Section: python
+Priority: optional
+Maintainer: Debian Python Team <team+python@tracker.debian.org>
+Uploaders: Josue Ortega <josue@debian.org>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-setuptools,
+ python3-all,
+ python3-six (>= 1.2),
+ python3-pytest,
+ python3-hypothesis,
+ openssl
+Homepage: https://github.com/warner/python-ecdsa
+Vcs-Browser: https://salsa.debian.org/python-team/packages/python-ecdsa
+Vcs-Git: https://salsa.debian.org/python-team/packages/python-ecdsa.git
+Rules-Requires-Root: no
+Standards-Version: 4.6.0
+X-Python3-Version: >= 3.6
+
+Package: python3-ecdsa
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ python3-six (>= 1.2)
+Description: ECDSA cryptographic signature library (Python 3)
+ This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
+ Digital Signature Algorithm), implemented purely in Python.  With this library,
+ you can quickly create keypairs (signing key and verifying key), sign messages,
+ and verify the signatures. The keys and signatures are very short, making them
+ easy to handle and incorporate into other protocols.
+ .
+ This package contains the module for Python 3.
