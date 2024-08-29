@@ -1,3 +1,4 @@
+import sys
 import pickle
 import hashlib
 import pytest
@@ -162,6 +163,27 @@ def test_ed25519_eq_x_different_y():
     assert a != b
 
 
+def test_ed25519_mul_by_order():
+    g = PointEdwards(
+        curve_ed25519,
+        generator_ed25519.x(),
+        generator_ed25519.y(),
+        1,
+        generator_ed25519.x() * generator_ed25519.y(),
+    )
+
+    assert g * generator_ed25519.order() == INFINITY
+
+
+def test_radd():
+
+    a = PointEdwards(curve_ed25519, 1, 1, 1, 1)
+
+    p = INFINITY + a
+
+    assert p == a
+
+
 def test_ed25519_test_normalisation_and_scaling():
     x = generator_ed25519.x()
     y = generator_ed25519.y()
@@ -257,6 +279,22 @@ class TestEd25519(unittest.TestCase):
             generator_ed25519 + generator_256
 
         self.assertIn("different curve", str(e.exception))
+
+
+def test_generate_with_point():
+    x1 = int(
+        "427838232691226969392843410947554224151809796397784248136826"
+        "78720006717057747"
+    )
+    y1 = int(
+        "463168356949264781694283940034751631413079938662562256157830"
+        "33603165251855960"
+    )
+    p = PointEdwards(curve_ed25519, x1, y1, 1, x1 * y1)
+
+    pk = PublicKey(generator_ed25519, b"0" * 32, public_point=p)
+
+    assert pk.public_point() == p
 
 
 def test_ed25519_mul_to_order_min_1():
@@ -500,6 +538,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PublicKey(generator_ed25519, b"\x01" * 32)
 
         self.assertEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertFalse(key1 != key2)
 
     def test_unequal_public_points(self):
@@ -519,6 +558,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PublicKey(generator_ed448, b"\x03" * 56 + b"\x00")
 
         self.assertNotEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertTrue(key1 != key2)
 
     def test_equal_private_keys(self):
@@ -526,6 +566,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PrivateKey(generator_ed25519, b"\x01" * 32)
 
         self.assertEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertFalse(key1 != key2)
 
     def test_unequal_private_keys(self):
@@ -533,6 +574,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PrivateKey(generator_ed25519, b"\x02" * 32)
 
         self.assertNotEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertTrue(key1 != key2)
 
     def test_unequal_privatekey_to_string(self):
@@ -580,6 +622,25 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
         self.assertIn("length", str(e.exception))
 
+    def test_changing_public_key(self):
+        key = PublicKey(generator_ed25519, b"\x01" * 32)
+
+        g = key.point
+
+        new_g = PointEdwards(curve_ed25519, g.x(), g.y(), 1, g.x() * g.y())
+
+        key.point = new_g
+
+        self.assertEqual(g, key.point)
+
+    def test_changing_public_key_to_different_point(self):
+        key = PublicKey(generator_ed25519, b"\x01" * 32)
+
+        with self.assertRaises(ValueError) as e:
+            key.point = generator_ed25519
+
+        self.assertIn("coordinates", str(e.exception))
+
     def test_invalid_s_value(self):
         key = PublicKey(
             generator_ed25519,
@@ -624,7 +685,10 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
 
 HYP_SETTINGS = dict()
-HYP_SETTINGS["max_examples"] = 10
+if "--fast" in sys.argv:  # pragma: no cover
+    HYP_SETTINGS["max_examples"] = 2
+else:
+    HYP_SETTINGS["max_examples"] = 10
 
 
 @settings(**HYP_SETTINGS)
@@ -649,6 +713,18 @@ def test_ed448_encode_decode(multiple):
     b = PointEdwards.from_bytes(curve_ed448, a.to_bytes())
 
     assert a == b
+
+
+@settings(**HYP_SETTINGS)
+@example(1)
+@example(2)
+@given(st.integers(min_value=1, max_value=int(generator_ed25519.order()) - 1))
+def test_ed25519_mul_precompute_vs_naf(multiple):
+    """Compare multiplication with and without precomputation."""
+    g = generator_ed25519
+    new_g = PointEdwards(curve_ed25519, g.x(), g.y(), 1, g.x() * g.y())
+
+    assert g * multiple == multiple * new_g
 
 
 # Test vectors from RFC 8032
@@ -1027,7 +1103,8 @@ TEST_VECTORS = [
 
 
 @pytest.mark.parametrize(
-    "generator,private_key,public_key,message,signature", TEST_VECTORS,
+    "generator,private_key,public_key,message,signature",
+    TEST_VECTORS,
 )
 def test_vectors(generator, private_key, public_key, message, signature):
     private_key = a2b_hex(private_key)

@@ -1,22 +1,26 @@
 # Pure-Python ECDSA and ECDH
 
 [![Build Status](https://github.com/tlsfuzzer/python-ecdsa/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tlsfuzzer/python-ecdsa/actions?query=workflow%3A%22GitHub+CI%22+branch%3Amaster)
+[![Documentation Status](https://readthedocs.org/projects/ecdsa/badge/?version=latest)](https://ecdsa.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/tlsfuzzer/python-ecdsa/badge.svg?branch=master)](https://coveralls.io/github/tlsfuzzer/python-ecdsa?branch=master)
-[![condition coverage](https://img.shields.io/badge/condition%20coverage-87%25-yellow)](https://travis-ci.com/github/tlsfuzzer/python-ecdsa/jobs/458951056#L544)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/context:python)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/alerts/)
+![condition coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tomato42/9b6ca1f3410207fbeca785a178781651/raw/python-ecdsa-condition-coverage.json)
+![mutation score](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tomato42/9b6ca1f3410207fbeca785a178781651/raw/python-ecdsa-mutation-score.json)
+[![CodeQL](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/codeql.yml/badge.svg)](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/codeql.yml)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat)
 
 
 This is an easy-to-use implementation of ECC (Elliptic Curve Cryptography)
-with support for ECDSA (Elliptic Curve Digital Signature Algorithm) and ECDH
+with support for ECDSA (Elliptic Curve Digital Signature Algorithm),
+EdDSA (Edwards-curve Digital Signature Algorithm) and ECDH
 (Elliptic Curve Diffie-Hellman), implemented purely in Python, released under
-the MIT license. With this library, you can quickly create keypairs (signing
+the MIT license. With this library, you can quickly create key pairs (signing
 key and verifying key), sign messages, and verify the signatures. You can
 also agree on a shared secret key based on exchanged public keys.
 The keys and signatures are very short, making them easy to handle and
 incorporate into other protocols.
+
+**NOTE: This library should not be used in production settings, see [Security](#Security) for more details.**
 
 ## Features
 
@@ -33,13 +37,15 @@ regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
 `brainpoolP512r1`. Few of the small curves from SEC standard are also
 included (mainly to speed-up testing of the library), those are:
 `secp112r1`, `secp112r2`, `secp128r1`, and `secp160r1`.
+Key generation, siging and verifying is also supported for Ed25519 and
+Ed448 curves.
 No other curves are included, but it is not too hard to add support for more
 curves over prime fields.
 
 ## Dependencies
 
 This library uses only Python and the 'six' package. It is compatible with
-Python 2.6, 2.7, and 3.3+. It also supports execution on alternative
+Python 2.6, 2.7, and 3.5+. It also supports execution on alternative
 implementations like pypy and pypy3.
 
 If `gmpy2` or `gmpy` is installed, they will be used for faster arithmetic.
@@ -50,7 +56,7 @@ You should prefer `gmpy2` on Python3 for optimal performance.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
-1.0.0a, 1.0.2f and 1.1.1d (among others).
+1.0.0a, 1.0.2f, 1.1.1d and 3.0.1 (among others).
 
 
 ## Installation
@@ -75,7 +81,7 @@ pip install ecdsa[gmpy]
 
 ## Speed
 
-The following table shows how long this library takes to generate keypairs
+The following table shows how long this library takes to generate key pairs
 (`keygen`), to sign data (`sign`), to verify those signatures (`verify`),
 to derive a shared secret (`ecdh`), and
 to verify the signatures with no key-specific precomputation (`no PC verify`).
@@ -110,6 +116,8 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
        SECP112r2:     28   0.00015s   6697.11   0.00015s   6479.98   0.00028s   3524.72       0.00058s        1716.16
        SECP128r1:     32   0.00018s   5497.65   0.00019s   5272.89   0.00036s   2747.39       0.00072s        1396.16
        SECP160r1:     42   0.00025s   3949.32   0.00026s   3894.45   0.00046s   2153.85       0.00102s         985.07
+         Ed25519:     64   0.00076s   1324.48   0.00042s   2405.01   0.00109s    918.05       0.00344s         290.50
+           Ed448:    114   0.00176s    569.53   0.00115s    870.94   0.00282s    355.04       0.01024s          97.69
 
                        ecdh     ecdh/s
         NIST192p:   0.00104s    964.89
@@ -152,6 +160,8 @@ On the same machine I'm getting the following performance with `gmpy2`:
        SECP112r2:     28   0.00009s  11322.97   0.00009s  10857.71   0.00017s   5748.77       0.00032s        3094.28
        SECP128r1:     32   0.00010s  10078.39   0.00010s   9665.27   0.00019s   5200.58       0.00036s        2760.88
        SECP160r1:     42   0.00015s   6875.51   0.00015s   6647.35   0.00029s   3422.41       0.00057s        1768.35
+         Ed25519:     64   0.00030s   3322.56   0.00018s   5568.63   0.00046s   2165.35       0.00153s         654.02
+           Ed448:    114   0.00060s   1680.53   0.00039s   2567.40   0.00096s   1036.67       0.00350s         285.62
 
                        ecdh     ecdh/s
         NIST192p:   0.00050s   1985.70
@@ -189,6 +199,10 @@ Run `openssl speed ecdsa` and `openssl speed ecdh` to reproduce it:
  256 bits ecdsa (brainpoolP256r1)   0.0003s   0.0003s   2983.5   3333.2
  384 bits ecdsa (brainpoolP384r1)   0.0008s   0.0007s   1258.8   1528.1
  512 bits ecdsa (brainpoolP512r1)   0.0015s   0.0012s    675.1    860.1
+
+                              sign    verify    sign/s verify/s
+ 253 bits EdDSA (Ed25519)   0.0000s   0.0001s  28217.9  10897.7
+ 456 bits EdDSA (Ed448)     0.0003s   0.0005s   3926.5   2147.7
 
                                op      op/s
  192 bits ecdh (nistp192)   0.0002s   4853.4
@@ -249,14 +263,14 @@ interoperability testing and as a teaching tool.
 
 **This library does not protect against side-channel attacks.**
 
-Do not allow attackers to measure how long it takes you to generate a keypair
+Do not allow attackers to measure how long it takes you to generate a key pair
 or sign a message. Do not allow attackers to run code on the same physical
-machine when keypair generation or signing is taking place (this includes
+machine when key pair generation or signing is taking place (this includes
 virtual machines). Do not allow attackers to measure how much power your
-computer uses while generating the keypair or signing a message. Do not allow
+computer uses while generating the key pair or signing a message. Do not allow
 attackers to measure RF interference coming from your computer while generating
-a keypair or signing a message. Note: just loading the private key will cause
-keypair generation. Other operations or attack vectors may also be
+a key pair or signing a message. Note: just loading the private key will cause
+key pair generation. Other operations or attack vectors may also be
 vulnerable to attacks. **For a sophisticated attacker observing just one
 operation with a private key will be sufficient to completely
 reconstruct the private key**.
@@ -521,7 +535,7 @@ failures of the entropy source.
 
 ## Examples
 
-Create a NIST192p keypair and immediately save both to disk:
+Create a NIST192p key pair and immediately save both to disk:
 
 ```python
 from ecdsa import SigningKey
@@ -564,7 +578,7 @@ except BadSignatureError:
     print "BAD SIGNATURE"
 ```
 
-Create a NIST521p keypair:
+Create a NIST521p key pair:
 
 ```python
 from ecdsa import SigningKey, NIST521p

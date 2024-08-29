@@ -1,3 +1,67 @@
+python-ecdsa (0.19.0-2) unstable; urgency=medium
+
+  * Team upload.
+  * Fix NameError in ecdsa.numbertheory caused by remove-six.patch.
+
+ -- Colin Watson <cjwatson@debian.org>  Tue, 30 Apr 2024 11:24:58 +0100
+
+python-ecdsa (0.19.0-1) unstable; urgency=medium
+
+  * Team Upload.
+  * New upstream version 0.19.0
+  * refresh patches
+
+ -- Alexandre Detiste <tchet@debian.org>  Wed, 24 Apr 2024 21:55:22 +0200
+
+python-ecdsa (0.18.0-5) unstable; urgency=medium
+
+  * Team Upload.
+  * Remove python3-six from debian/control
+
+ -- Alexandre Detiste <tchet@debian.org>  Sun, 07 Jan 2024 23:35:41 +0100
+
+python-ecdsa (0.18.0-4) unstable; urgency=medium
+
+  * Team Upload.
+  * cherry pick upstream-proposed patch to remove need for python3-six
+  * vendor six.int2byte() to fix 2 failing tests out of 1761
+  * use new dh-sequence-python3
+
+ -- Alexandre Detiste <tchet@debian.org>  Sat, 06 Jan 2024 03:41:47 +0100
+
+python-ecdsa (0.18.0-3) unstable; urgency=medium
+
+  * Team Upload.
+  * Cherry-pick upstream patch to set tighter
+    hypothesis bounds (Closes: #1026640)
+
+ -- Nilesh Patra <nilesh@debian.org>  Thu, 22 Dec 2022 01:45:41 +0530
+
+python-ecdsa (0.18.0-2) unstable; urgency=medium
+
+  [ Debian Janitor ]
+  * Remove constraints unnecessary since buster (oldstable):
+    + Build-Depends: Drop versioned constraint on python3-six.
+    + python3-ecdsa: Drop versioned constraint on python3-six in Depends.
+
+ -- Jelmer Vernooĳ <jelmer@debian.org>  Sat, 22 Oct 2022 11:06:29 +0100
+
+python-ecdsa (0.18.0-1) unstable; urgency=medium
+
+  * New upstream release (0.18.0).
+  * debian/copyright: Update debian/* copyright years.
+
+ -- Josue Ortega <josue@debian.org>  Tue, 19 Jul 2022 00:03:40 +0200
+
+python-ecdsa (0.18.0~b2-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version 0.18.0~b2
+  * Bump Standards-Version to 4.6.1
+  * Remove obsolete Python version restriction from d/control
+
+ -- Timo Röhling <roehling@debian.org>  Thu, 23 Jun 2022 09:45:37 +0200
+
 python-ecdsa (0.18.0~b1-1) unstable; urgency=medium
 
   * New upstream release (0.18.0~b1):
