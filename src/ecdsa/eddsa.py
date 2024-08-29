@@ -12,7 +12,7 @@ from ._compat import (
 )
 
 # edwards25519, defined in RFC7748
-_p = 2 ** 255 - 19
+_p = 2**255 - 19
 _a = -1
 _d = int(
     remove_whitespace(
@@ -34,7 +34,7 @@ _Gy = int(
         "03165251855960"
     )
 )
-_r = 2 ** 252 + 0x14DEF9DEA2F79CD65812631A5CF5D3ED
+_r = 2**252 + 0x14DEF9DEA2F79CD65812631A5CF5D3ED
 
 
 def _sha512(data):
@@ -43,12 +43,12 @@ def _sha512(data):
 
 curve_ed25519 = ellipticcurve.CurveEdTw(_p, _a, _d, _h, _sha512)
 generator_ed25519 = ellipticcurve.PointEdwards(
-    curve_ed25519, _Gx, _Gy, 1, _Gx * _Gy % _p, _r
+    curve_ed25519, _Gx, _Gy, 1, _Gx * _Gy % _p, _r, generator=True
 )
 
 
 # edwards448, defined in RFC7748
-_p = 2 ** 448 - 2 ** 224 - 1
+_p = 2**448 - 2**224 - 1
 _a = 1
 _d = -39081 % _p
 _h = 4
@@ -67,7 +67,7 @@ _Gy = int(
         "832660"
     )
 )
-_r = 2 ** 446 - 0x8335DC163BB124B65129C96FDE933D8D723A70AADC873D6D54A7BB0D
+_r = 2**446 - 0x8335DC163BB124B65129C96FDE933D8D723A70AADC873D6D54A7BB0D
 
 
 def _shake256(data):
@@ -76,7 +76,7 @@ def _shake256(data):
 
 curve_ed448 = ellipticcurve.CurveEdTw(_p, _a, _d, _h, _shake256)
 generator_ed448 = ellipticcurve.PointEdwards(
-    curve_ed448, _Gx, _Gy, 1, _Gx * _Gy % _p, _r
+    curve_ed448, _Gx, _Gy, 1, _Gx * _Gy % _p, _r, generator=True
 )
 
 
@@ -115,6 +115,12 @@ class PublicKey(object):
     @property
     def point(self):
         return self.__point
+
+    @point.setter
+    def point(self, other):
+        if self.__point != other:
+            raise ValueError("Can't change the coordinates of the point")
+        self.__point = other
 
     def public_point(self):
         return self.__point

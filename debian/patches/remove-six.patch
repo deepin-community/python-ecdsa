@@ -1,0 +1,506 @@
+From: shixuantong <sxt1001@foxmail.com>
+Date: Wed, 13 Apr 2022 00:04:12 +0800
+Subject: [PATCH] drop six
+Forwarded: https://github.com/tlsfuzzer/python-ecdsa/pull/294
+
+---
+ .travis.yml                |   1 -
+ setup.py                   |   2 +-
+ speed.py                   |   7 +-
+ src/ecdsa/__init__.py      |   5 -
+ src/ecdsa/_compat.py       |   4 +-
+ src/ecdsa/curves.py        |   3 +-
+ src/ecdsa/der.py           |  37 ++--
+ src/ecdsa/ecdsa.py         |   7 +-
+ src/ecdsa/ellipticcurve.py |   2 -
+ src/ecdsa/keys.py          |   9 +-
+ src/ecdsa/numbertheory.py  |  13 +-
+ src/ecdsa/test_der.py      |  39 ++---
+ src/ecdsa/test_pyecdsa.py  | 343 ++++++++++++++++---------------------
+ src/ecdsa/util.py          |  12 +-
+ tox.ini                    |   3 -
+ 15 files changed, 205 insertions(+), 282 deletions(-)
+
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -87,7 +87,6 @@
+         env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+         install:
+           - pip list
+-          - pip install six
+           - pip install -r build-requirements.txt
+           - pip list
+         script:
+--- a/setup.py
++++ b/setup.py
+@@ -43,6 +43,6 @@
+         "Programming Language :: Python :: 3.11",
+         "Programming Language :: Python :: 3.12",
+     ],
+-    install_requires=["six>=1.9.0"],
++    install_requires=[],
+     extras_require={"gmpy2": "gmpy2", "gmpy": "gmpy"},
+ )
+--- a/src/ecdsa/__init__.py
++++ b/src/ecdsa/__init__.py
+@@ -1,6 +1,3 @@
+-# while we don't use six in this file, we did bundle it for a long time, so
+-# keep as part of module in a virtual way (through __all__)
+-import six
+ from .keys import (
+     SigningKey,
+     VerifyingKey,
+@@ -56,7 +53,6 @@
+     "numbertheory",
+     "test_pyecdsa",
+     "util",
+-    "six",
+ ]
+ 
+ _hush_pyflakes = [
+@@ -90,7 +86,7 @@
+     SECP160r1,
+     Ed25519,
+     Ed448,
+-    six.b(""),
++    b"",
+     BRAINPOOLP160t1,
+     BRAINPOOLP192t1,
+     BRAINPOOLP224t1,
+--- a/src/ecdsa/_compat.py
++++ b/src/ecdsa/_compat.py
+@@ -4,13 +4,11 @@
+ import sys
+ import re
+ import binascii
+-from six import integer_types
+-
+ 
+ def str_idx_as_int(string, index):
+     """Take index'th byte from string, return as integer"""
+     val = string[index]
+-    if isinstance(val, integer_types):
++    if isinstance(val, int):
+         return val
+     return ord(val)
+ 
+--- a/src/ecdsa/curves.py
++++ b/src/ecdsa/curves.py
+@@ -1,6 +1,5 @@
+ from __future__ import division
+ 
+-from six import PY2
+ from . import der, ecdsa, ellipticcurve, eddsa
+ from .util import orderlen, number_to_string, string_to_number
+ from ._compat import normalise_bytes, bit_length
+@@ -269,7 +268,7 @@
+             and ``explicit``
+         :type valid_encodings: :term:`set-like object`
+         """
+-        if not PY2 and isinstance(string, str):  # pragma: no branch
++        if isinstance(string, str):  # pragma: no branch
+             string = string.encode()
+ 
+         ec_param_index = string.find(b"-----BEGIN EC PARAMETERS-----")
+--- a/src/ecdsa/der.py
++++ b/src/ecdsa/der.py
+@@ -4,9 +4,10 @@
+ import base64
+ import warnings
+ from itertools import chain
+-from six import int2byte, text_type
+ from ._compat import compat26_str, str_idx_as_int
+ 
++import struct
++int2byte = struct.Struct(">B").pack
+ 
+ class UnexpectedDER(Exception):
+     pass
+@@ -386,7 +387,7 @@
+ 
+ 
+ def unpem(pem):
+-    if isinstance(pem, text_type):  # pragma: no branch
++    if isinstance(pem, str):  # pragma: no branch
+         pem = pem.encode()
+ 
+     d = b"".join(
+--- a/src/ecdsa/ecdsa.py
++++ b/src/ecdsa/ecdsa.py
+@@ -65,12 +65,13 @@
+ """
+ 
+ import warnings
+-from six import int2byte
+ from . import ellipticcurve
+ from . import numbertheory
+ from .util import bit_length
+ from ._compat import remove_whitespace
+ 
++import struct
++int2byte = struct.Struct(">B").pack
+ 
+ class RSZeroError(RuntimeError):
+     pass
+--- a/src/ecdsa/ellipticcurve.py
++++ b/src/ecdsa/ellipticcurve.py
+@@ -47,14 +47,12 @@
+         GMPY = False
+ 
+ 
+-from six import python_2_unicode_compatible
+ from . import numbertheory
+ from ._compat import normalise_bytes, int_to_bytes, bit_length, bytes_to_int
+ from .errors import MalformedPointError
+ from .util import orderlen, string_to_number, number_to_string
+ 
+ 
+-@python_2_unicode_compatible
+ class CurveFp(object):
+     """
+     :term:`Short Weierstrass Elliptic Curve <short Weierstrass curve>` over a
+--- a/src/ecdsa/keys.py
++++ b/src/ecdsa/keys.py
+@@ -5,7 +5,6 @@
+ import binascii
+ from hashlib import sha1
+ import os
+-from six import PY2
+ from . import ecdsa, eddsa
+ from . import der, ssh
+ from . import rfc6979
+@@ -963,7 +962,7 @@
+         :return: Initialised SigningKey object
+         :rtype: SigningKey
+         """
+-        if not PY2 and isinstance(string, str):  # pragma: no branch
++        if isinstance(string, str):  # pragma: no branch
+             string = string.encode()
+ 
+         # The privkey pem may have multiple sections, commonly it also has
+--- a/src/ecdsa/numbertheory.py
++++ b/src/ecdsa/numbertheory.py
+@@ -12,8 +12,9 @@
+ from __future__ import division
+ 
+ import sys
+-from six import integer_types, PY2
+-from six.moves import reduce
++from functools import reduce
++
++integer_types = int,
+ 
+ try:
+     xrange
+@@ -218,11 +217,7 @@
+         assert d == p - 1
+         return (2 * a * pow(4 * a, (p - 5) // 8, p)) % p
+ 
+-    if PY2:
+-        # xrange on python2 can take integers representable as C long only
+-        range_top = min(0x7FFFFFFF, p)
+-    else:
+-        range_top = p
++    range_top = p
+     for b in xrange(2, range_top):  # pragma: no branch
+         if jacobi(b * b - 4 * a, p) == -1:
+             f = (a, -b, 1)
+--- a/src/ecdsa/test_pyecdsa.py
++++ b/src/ecdsa/test_pyecdsa.py
+@@ -16,7 +16,6 @@
+ from hypothesis import given, settings
+ import hypothesis.strategies as st
+ 
+-from six import b, print_, binary_type
+ from .keys import SigningKey, VerifyingKey
+ from .keys import BadSignatureError, MalformedPointError, BadDigestError
+ from . import util
+@@ -70,6 +69,7 @@
+ from . import rfc6979
+ from . import ecdsa
+ 
++binary_type = bytes
+ 
+ class SubprocessError(Exception):
+     pass
+@@ -293,7 +293,7 @@
+         priv1 = SigningKey.generate()
+         pub1 = priv1.get_verifying_key()
+         s1 = pub1.to_string()
+-        self.assertEqual(type(s1), binary_type)
++        self.assertEqual(type(s1), bytes)
+         self.assertEqual(len(s1), NIST192p.verifying_key_length)
+         pub2 = VerifyingKey.from_string(s1)
+         self.assertTruePubkeysEqual(pub1, pub2)
+@@ -345,13 +345,13 @@
+         priv1 = SigningKey.generate(curve=BRAINPOOLP512r1)
+         pub1 = priv1.get_verifying_key()
+         s1 = pub1.to_string()
+-        self.assertEqual(type(s1), binary_type)
++        self.assertEqual(type(s1), bytes)
+         self.assertEqual(len(s1), BRAINPOOLP512r1.verifying_key_length)
+         pub2 = VerifyingKey.from_string(s1, curve=BRAINPOOLP512r1)
+         self.assertTruePubkeysEqual(pub1, pub2)
+ 
+         pub1_der = pub1.to_der()
+-        self.assertEqual(type(pub1_der), binary_type)
++        self.assertEqual(type(pub1_der), bytes)
+         pub2 = VerifyingKey.from_der(pub1_der)
+         self.assertTruePubkeysEqual(pub1, pub2)
+ 
+@@ -370,9 +370,7 @@
+ 
+     def test_vk_from_der_garbage_after_curve_oid(self):
+         type_oid_der = encoded_oid_ecPublicKey
+-        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b(
+-            "garbage"
+-        )
++        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b"garbage"
+         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
+         point_der = der.encode_bitstring(b"\x00\xff", None)
+         to_decode = der.encode_sequence(enc_type_der, point_der)
+@@ -775,10 +773,10 @@
+         sk = SigningKey.from_secret_exponent(123456789)
+         vk = sk.verifying_key
+ 
+-        exp = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        exp = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+         self.assertEqual(vk.to_string(), exp)
+         self.assertEqual(vk.to_string("raw"), exp)
+@@ -790,10 +788,10 @@
+         sk = SigningKey.from_secret_exponent(123456789)
+         vk = sk.verifying_key
+ 
+-        enc = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+ 
+         from_raw = VerifyingKey.from_string(enc)
+@@ -809,11 +807,11 @@
+         self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
+ 
+     def test_uncompressed_decoding_as_only_alowed(self):
+-        enc = b(
+-            "\x04"
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x04"
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+         vk = VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
+         sk = SigningKey.from_secret_exponent(123456789)
+@@ -821,10 +819,10 @@
+         self.assertEqual(vk, sk.verifying_key)
+ 
+     def test_raw_decoding_with_blocked_format(self):
+-        enc = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+         with self.assertRaises(MalformedPointError) as exp:
+             VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
+@@ -838,11 +836,11 @@
+         self.assertIn("Only uncompressed, compressed", str(e.exception))
+ 
+     def test_uncompressed_decoding_with_blocked_format(self):
+-        enc = b(
+-            "\x04"
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x04"
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+         with self.assertRaises(MalformedPointError) as exp:
+             VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
+@@ -850,11 +848,11 @@
+         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
+ 
+     def test_hybrid_decoding_with_blocked_format(self):
+-        enc = b(
+-            "\x06"
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x06"
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+         with self.assertRaises(MalformedPointError) as exp:
+             VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
+@@ -862,11 +860,11 @@
+         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
+ 
+     def test_compressed_decoding_with_blocked_format(self):
+-        enc = b(
+-            "\x02"
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x02"
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )[:25]
+         with self.assertRaises(MalformedPointError) as exp:
+             VerifyingKey.from_string(enc, valid_encodings=("hybrid", "raw"))
+@@ -874,40 +872,40 @@
+         self.assertIn("(hybrid, raw)", str(exp.exception))
+ 
+     def test_decoding_with_malformed_uncompressed(self):
+-        enc = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+ 
+         with self.assertRaises(MalformedPointError):
+             VerifyingKey.from_string(b"\x02" + enc)
+ 
+     def test_decoding_with_malformed_compressed(self):
+-        enc = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+ 
+         with self.assertRaises(MalformedPointError):
+             VerifyingKey.from_string(b"\x01" + enc[:24])
+ 
+     def test_decoding_with_inconsistent_hybrid(self):
+-        enc = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+ 
+         with self.assertRaises(MalformedPointError):
+             VerifyingKey.from_string(b"\x07" + enc)
+ 
+     def test_decoding_with_point_not_on_curve(self):
+-        enc = b(
+-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
++        enc = (
++            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
++            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
++            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+         )
+ 
+         with self.assertRaises(MalformedPointError):
+@@ -1907,7 +1905,7 @@
+         # this technique should use the full range
+         self.assertTrue(counts[order - 1])
+         for i in range(1, order):
+-            print_("%3d: %s" % (i, "*" * (counts[i] // 100)))
++            print("%3d: %s" % (i, "*" * (counts[i] // 100)))
+ 
+ 
+ class RFC6979(unittest.TestCase):
+@@ -1997,9 +1995,7 @@
+             ),
+             secexp=int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
+             hsh=unhexlify(
+-                b(
+-                    "AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"
+-                )
++                b"AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"
+             ),
+             hash_func=hashlib.sha256,
+             expected=int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16),
+--- a/src/ecdsa/util.py
++++ b/src/ecdsa/util.py
+@@ -18,10 +18,11 @@
+ import binascii
+ import sys
+ from hashlib import sha256
+-from six import PY2, int2byte, next
+ from . import der
+ from ._compat import normalise_bytes
+ 
++import struct
++int2byte = struct.Struct(">B").pack
+ 
+ # RFC5480:
+ #   The "unrestricted" algorithm identifier is:
+@@ -111,10 +112,7 @@
+     def __call__(self, numbytes):
+         a = [next(self.generator) for i in range(numbytes)]
+ 
+-        if PY2:  # pragma: no branch
+-            return "".join(a)
+-        else:
+-            return bytes(a)
++        return bytes(a)
+ 
+     def block_generator(self, seed):
+         counter = 0
+@@ -185,7 +183,7 @@
+     base = "\x00" * (maxbytes - len(base)) + base
+     topbits = 8 * maxbytes - bits
+     if topbits:
+-        base = int2byte(ord(base[0]) & lsb_of_ones(topbits)) + base[1:]
++        base = bytes((ord(base[0]) & lsb_of_ones(topbits),)) + base[1:]
+     number = 1 + int(binascii.hexlify(base), 16)
+     assert 1 <= number < order
+     return number
+--- a/tox.ini
++++ b/tox.ini
+@@ -12,8 +12,6 @@
+      gmpypy{27,39,310,311,312}: gmpy
+      gmpy{2py27,2py39,2py310,2py311,2py312,py27,py39,py310,py311,py312}: pytest
+      gmpy{2py27,2py39,2py310,2py311,2py312,py27,py39,py310,py311,py312}: hypothesis
+-# six==1.9.0 comes from setup.py install_requires
+-     py27_old_six: six==1.9.0
+      py27_old_six: pytest
+      py27_old_six: hypothesis
+ # those are the oldest versions of gmpy and gmpy2 on PyPI (i.e. oldest we can
+@@ -76,7 +74,6 @@
+      hypothesis
+      pytest>=4.6.0
+      coverage
+-     six
+ commands =
+          instrumental -t ecdsa -i '.*test_.*|.*_version|.*_compat|.*_sha3' {envbindir}/pytest {posargs:src/ecdsa}
+          instrumental -f .instrumental.cov -sr
