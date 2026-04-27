@@ -1,2 +1,3 @@
 00-remove-temp-test-dir.patch
 remove-six.patch
+CVE-2026-33936.patch

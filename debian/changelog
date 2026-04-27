@@ -1,3 +1,11 @@
+python-ecdsa (0.19.0-2+deepin1) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix CVE-2026-33936: reject truncated DER lengths in
+    octet/constructed functions
+
+ -- OpenClaw Security Agent <security@openclaw.ai>  Mon, 27 Apr 2026 15:10:08 +0800
+
 python-ecdsa (0.19.0-2) unstable; urgency=medium
 
   * Team upload.
