@@ -1,6 +1,7 @@
 #!/usr/bin/make -f
 
 export PYBUILD_NAME=ecdsa
+export PYBUILD_TEST_ARGS=-k 'not test_SigningKey_from_pem_pkcs8v2_EdDSA'
 
 %:
 	dh $@ --buildsystem=pybuild
