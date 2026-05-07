@@ -1,3 +1,23 @@
+python-ecdsa (0.19.2-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream version 0.19.2 (Closes: #1132164) CVE-2026-33936
+  * Disable useless Salsa CI jobs
+  * Bump Standards-Version to 4.7.3, drop Priority: tag
+  * Drop "Rules-Requires-Root: no": it is the default now
+  * Rewrite d/watch in v5 format
+  * Refresh remove_six.patch
+
+ -- Alexandre Detiste <tchet@debian.org>  Wed, 01 Apr 2026 10:19:06 +0200
+
+python-ecdsa (0.19.1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release.
+  * Use pybuild-plugin-pyproject.
+
+ -- Colin Watson <cjwatson@debian.org>  Sun, 23 Mar 2025 16:27:42 +0000
+
 python-ecdsa (0.19.0-2) unstable; urgency=medium
 
   * Team upload.

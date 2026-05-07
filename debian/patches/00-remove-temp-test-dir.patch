@@ -8,12 +8,14 @@ Forwarded: not-needed
 
 dirty tree module at installation time
 ---
- src/ecdsa/test_pyecdsa.py | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+ src/ecdsa/test_pyecdsa.py | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
 
+diff --git a/src/ecdsa/test_pyecdsa.py b/src/ecdsa/test_pyecdsa.py
+index 799e9b7..7a16d65 100644
 --- a/src/ecdsa/test_pyecdsa.py
 +++ b/src/ecdsa/test_pyecdsa.py
-@@ -99,6 +99,11 @@
+@@ -99,6 +99,11 @@ def run_openssl(cmd):
  
  
  class ECDSA(unittest.TestCase):
@@ -25,7 +27,7 @@ dirty tree module at installation time
      def test_basic(self):
          priv = SigningKey.generate()
          pub = priv.get_verifying_key()
-@@ -1768,6 +1773,10 @@
+@@ -1812,6 +1817,10 @@ class TooSmallCurve(unittest.TestCase):
  
  
  class DER(unittest.TestCase):
@@ -36,7 +38,7 @@ dirty tree module at installation time
      def test_integer(self):
          self.assertEqual(der.encode_integer(0), b"\x02\x01\x00")
          self.assertEqual(der.encode_integer(1), b"\x02\x01\x01")
-@@ -1832,6 +1841,10 @@
+@@ -1876,6 +1885,10 @@ class DER(unittest.TestCase):
  
  
  class Util(unittest.TestCase):
@@ -47,7 +49,7 @@ dirty tree module at installation time
      @pytest.mark.slow
      def test_trytryagain(self):
          tta = util.randrange_from_seed__trytryagain
-@@ -1898,6 +1911,9 @@
+@@ -1942,6 +1955,9 @@ class Util(unittest.TestCase):
  
  
  class RFC6979(unittest.TestCase):
@@ -57,7 +59,7 @@ dirty tree module at installation time
      # https://tools.ietf.org/html/rfc6979#appendix-A.1
      def _do(self, generator, secexp, hsh, hash_func, expected):
          actual = rfc6979.generate_k(generator.order(), secexp, hash_func, hsh)
-@@ -2102,6 +2118,10 @@
+@@ -2144,6 +2160,10 @@ class RFC6979(unittest.TestCase):
  
  
  class ECDH(unittest.TestCase):
